@@ -1,0 +1,5 @@
+#!/bin/bash
+set -eu
+echo
+echo "You are now in the chroot and can configure it; type exit to continue the build when you are finished"
+exec /bin/bash
