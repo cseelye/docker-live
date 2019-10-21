@@ -19,6 +19,7 @@ echo ">>> Creating chroot"
 debootstrap --include="$(cat ${SOURCE_DIR}/install-packages.txt | tr '\n' ',')" --variant=minbase ${DEB_SUITE} ${BUILD_DIR}/chroot ${DEB_MIRROR}
 
 # Customize chroot
+echo ">>> Configuring chroot"
 rsync -axq ${SOURCE_DIR}/hooks ${BUILD_DIR}/chroot
 for hook in $(find ${BUILD_DIR}/chroot/hooks -maxdepth 1 -executable -type f | sort); do
     echo ">>> Executing configure hook ${hook}"

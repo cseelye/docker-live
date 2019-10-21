@@ -19,7 +19,7 @@ BUILD_IMAGE_MARKER = .$(subst :,-,$(BUILD_IMAGE_NAME))
 ISO_DEPS = $(wildcard hooks/*)
 ISO_DEPS += build-iso install-packages.txt
 
-# Override command names where needed for macOS
+# Override commands where needed for macOS
 TOUCH = touch
 uname=$(shell uname -s)
 ifeq ($(uname),Darwin)
@@ -45,7 +45,7 @@ list:
 define create_image_marker
 time=$$(docker inspect --format '{{.Metadata.LastTagTime}}' $1 2>/dev/null | perl -pe 's/\s+[^\s]+$$//'); \
 if [[ $$? -ne 0 ]]; then \
-    time=1970-01-01T00:00:01Z; \
+    time=1970-01-01T00:00:01.000Z; \
 fi; \
 $(TOUCH) -d "$${time}" '$2';
 endef
