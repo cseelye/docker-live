@@ -21,16 +21,11 @@ ISO_DEPS += build-iso install-packages.txt
 
 # Override command names where needed for macOS
 TOUCH = touch
-MKTEMP = mktemp --tmpdir
 uname=$(shell uname -s)
 ifeq ($(uname),Darwin)
     TOUCH = gtouch
     ifeq (, $(shell which gtouch))
         $(error "Please install gtouch)
-    endif
-    MKTEMP = gmktemp --tmpdir=/tmp
-    ifeq (, $(shell which gmktemp))
-        $(error "Please install gmktemp)
     endif
 endif
 
