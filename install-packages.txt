@@ -1,7 +1,4 @@
-acpi-support-base
-acpid
 apt-utils
-aufs-tools
 ca-certificates
 curl
 dbus

@@ -26,22 +26,14 @@ ENV SOURCE_DIR=${SOURCE_DIR:-/root/src}
 
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends --yes install \
-        adduser \
-        busybox-static \
-        bzip2 \
-        cpio \
         debootstrap \
         grub-efi-amd64-bin \
         grub-pc-bin \
-        insserv \
-        kmod \
         mtools \
         rsync \
         squashfs-tools \
-        sudo \
         vim \
-        xorriso \
-        xz-utils
+        xorriso
 
 WORKDIR $SOURCE_DIR
 CMD ["./build-iso"]
