@@ -25,7 +25,7 @@ uname=$(shell uname -s)
 ifeq ($(uname),Darwin)
     TOUCH = gtouch
     ifeq (, $(shell which gtouch))
-        $(error "Please install gtouch)
+        $(error "Please install gtouch")
     endif
 endif
 
