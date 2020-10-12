@@ -8,7 +8,7 @@ ifupdown
 iproute2
 iptables
 iputils-ping
-linux-image-4.19.0-6-amd64
+linux-image-amd64
 live-boot
 net-tools
 openssh-server
