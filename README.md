@@ -25,7 +25,7 @@ To manually customize the image, change the 90-manual-config hook to executable 
 
 
 ## Starting a container on boot
-This branch contains a demonstration of how to start a container when the system boots up. The steps are roughly this:
+The `start-container` branch contains a demonstration of how to start a container when the system boots up. The steps are roughly this:
 * Add whatever static content you need in the overlay/config hooks.
 * Create a systemd service file in the overlay at `overlay/lib/systemd/system/servicename.service` that will pull and run your container.
 * Enable the service by creating a symlink:
@@ -34,4 +34,4 @@ mkdir -p overlay/etc/systemd/system/multi-user.target.wants/
 ( cd overlay/etc/systemd/system/multi-user.target.wants/ && ln -fs /lib/systemd/system/servicename.service servicename.service )
 ```
 
-This branch demonstrates starting an nginc container on boot and serving a page off the host. Look through the files in the overlay to see how it works. If you build this iso and boot it, you should be able to go to the IP of the host system in a browser and get a "hello world" page.
+This branch demonstrates starting an nginx container on boot and serving a page off the host. Look through the files in the overlay to see how it works. If you build this iso and boot it, you should be able to go to the IP of the host system in a browser and get a "hello world" page.
