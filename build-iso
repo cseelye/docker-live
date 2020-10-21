@@ -21,12 +21,12 @@ debootstrap --include="$(cat ${SOURCE_DIR}/install-packages.txt | tr '\n' ',')" 
 echo ">>> Configuring chroot"
 
 # Apply the overlay
-# Copy the files from the overlay directory into the corresponding location in the chroot
+# Copy the files from the overlay directory into the corresponding location in the chroot, merging with the existing files/dirs
 echo ">>> Applying overlay"
-( set -x; rsync --verbose --archive --one-file-system --chown root:root --exclude README.md ${SOURCE_DIR}/overlay/ ${BUILD_DIR}/${CHROOT} )
+rsync --verbose --archive --ignore-existing --one-file-system --chown root:root --exclude README.md ${SOURCE_DIR}/overlay/ ${BUILD_DIR}/chroot/
 
 # Run the hooks
-rsync -axq ${SOURCE_DIR}/hooks ${BUILD_DIR}/chroot
+rsync --archive --one-file-system --quiet ${SOURCE_DIR}/hooks ${BUILD_DIR}/chroot/
 for hook in $(find ${BUILD_DIR}/chroot/hooks -maxdepth 1 -executable -type f | sort); do
     echo ">>> Executing configure hook ${hook}"
     (
