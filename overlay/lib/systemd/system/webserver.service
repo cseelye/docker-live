@@ -1,0 +1,21 @@
+[Unit]
+Description=Webserver container
+Requires=docker.service
+After=docker.service
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=simple
+StandardOutput=syslog+console
+StandardError=syslog+console
+
+# Before starting, remove any previous instances of the container, and pull the image from docker hub
+ExecStartPre=-docker container rm --force %p
+ExecStartPre=docker image pull nginx:latest
+# If the image is not public, you could 'docker image save' your image to a tarball, place it in the overlay somewhere, and then load it here
+# ExecStartPre=docker image load -i /somepath/image.tar
+
+# Start the container
+ExecStart=docker container run --rm --name %p --publish 80:80 --volume /var/www:/usr/share/nginx/html:ro nginx:latest
