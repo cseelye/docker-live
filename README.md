@@ -17,6 +17,8 @@ The default root password after booting the ISO is "live"; You can change this b
 ## Customizing
 To add or remove packages, edit the list of packages to be installed in install-packages.txt.
 
-For more advanced customization, create a new hook script in the hooks directory. See the existing hooks for examples. The hooks are run in alphabetical order, in the context of the chroot, just after debootstrapping.
+For more advanced customization there are a couple options:
+* Create files/directories in the overlay directory. Everything from the overlay firectory will be copied to the same location inside the container, relative to the root of the container filesystem.
+* Create a new hook script in the hooks directory. See the existing hooks for examples. The hooks are run in alphabetical order, in the context of the chroot, just after debootstrapping and the overlay is copied into place.
 
 To manually customize the image, change the 90-manual-config hook to executable and then `make iso` as normal. When the build gets to that hook, it will stop in an interactive shell, allowing you to manually confiugre the image in whatever way you wish. When finished, type exit to close the shell and the build will continue.
