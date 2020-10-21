@@ -18,9 +18,15 @@ mkdir -p ${BUILD_DIR}/{chroot,iso/live,scratch}
 echo ">>> Creating chroot"
 debootstrap --include="$(cat ${SOURCE_DIR}/install-packages.txt | tr '\n' ',')" --variant=minbase ${DEB_SUITE} ${BUILD_DIR}/chroot ${DEB_MIRROR}
 
-# Customize chroot
 echo ">>> Configuring chroot"
-rsync -axq ${SOURCE_DIR}/hooks ${BUILD_DIR}/chroot
+
+# Apply the overlay
+# Copy the files from the overlay directory into the corresponding location in the chroot, merging with the existing files/dirs
+echo ">>> Applying overlay"
+rsync --verbose --archive --ignore-existing --one-file-system --chown root:root --exclude README.md ${SOURCE_DIR}/overlay/ ${BUILD_DIR}/chroot/
+
+# Run the hooks
+rsync --archive --one-file-system --quiet ${SOURCE_DIR}/hooks ${BUILD_DIR}/chroot/
 for hook in $(find ${BUILD_DIR}/chroot/hooks -maxdepth 1 -executable -type f | sort); do
     echo ">>> Executing configure hook ${hook}"
     (
