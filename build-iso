@@ -1,8 +1,15 @@
 #!/bin/bash
-set -eu
+set -eEuo pipefail
 
-echo ">>> Build env:"
-env
+function indent()
+{
+    while read -r line; do
+        echo "${line}" | sed -e 's/^/    /'
+    done
+}
+
+echo ">> Build env:"
+env | indent
 
 # Some variables are assumed to be set by build/run args to docker:
 #    DEB_SUITE
@@ -13,48 +20,56 @@ env
 #    SOURCE_DIR
 # The repo is assumed to be mounted in the container at SOURCE_DIR
 
-mkdir -p ${BUILD_DIR}/{chroot,iso/live,scratch}
+mkdir -p ${BUILD_DIR}/{chroot,iso/casper,scratch}
 
-echo ">>> Creating chroot"
-debootstrap --include="$(cat ${SOURCE_DIR}/install-packages.txt | tr '\n' ',')" --variant=minbase ${DEB_SUITE} ${BUILD_DIR}/chroot ${DEB_MIRROR}
-
-echo ">>> Configuring chroot"
+echo ">> Creating chroot"
+(
+    debootstrap --components=main,restricted,universe --include="$(cat ${SOURCE_DIR}/install-packages.txt | tr '\n' ',')" --variant=minbase ${DEB_SUITE} ${BUILD_DIR}/chroot ${DEB_MIRROR}
+) 2>&1 | indent
+echo ">> Configuring chroot"
 
 # Apply the overlay
 # Copy the files from the overlay directory into the corresponding location in the chroot, merging with the existing files/dirs
-echo ">>> Applying overlay"
-rsync --verbose --archive --ignore-existing --one-file-system --chown root:root --exclude README.md ${SOURCE_DIR}/overlay/ ${BUILD_DIR}/chroot/
+echo ">> Applying overlay"
+(
+    rsync --verbose --archive --ignore-existing --one-file-system --chown root:root --exclude README.md ${SOURCE_DIR}/overlay/ ${BUILD_DIR}/chroot/
+) 2>&1 | indent
 
 # Run the hooks
 rsync --archive --one-file-system --quiet ${SOURCE_DIR}/hooks ${BUILD_DIR}/chroot/
 for hook in $(find ${BUILD_DIR}/chroot/hooks -maxdepth 1 -executable -type f | sort); do
-    echo ">>> Executing configure hook ${hook}"
+    echo ">> Executing configure hook ${hook}"
     (
         export DEBIAN_FRONTEND=noninteractive
         chroot ${BUILD_DIR}/chroot hooks/$(basename ${hook})
-    )
+    ) 2>&1 | indent
 done
 rm -rf ${BUILD_DIR}/chroot/hooks
 
 # Create squashfs
-echo ">>> Creating squashfs"
-mksquashfs \
-    ${BUILD_DIR}/chroot \
-    ${BUILD_DIR}/iso/live/filesystem.squashfs \
-    -e boot
-ls -lh ${BUILD_DIR}/iso/live/filesystem.squashfs
+echo ">> Creating squashfs"
+(
+    mksquashfs \
+        ${BUILD_DIR}/chroot \
+        ${BUILD_DIR}/iso/casper/filesystem.squashfs \
+        -e boot \
+        -no-progress
+    ls -lh ${BUILD_DIR}/iso/casper/filesystem.squashfs
+) 2>&1 | indent
 
 # Get the kernel and initrd
 cp ${BUILD_DIR}/chroot/boot/vmlinuz-* \
-   ${BUILD_DIR}/iso/vmlinuz
+   ${BUILD_DIR}/iso/casper/vmlinuz
 cp ${BUILD_DIR}/chroot/boot/initrd.img-* \
-   ${BUILD_DIR}/iso/initrd
+   ${BUILD_DIR}/iso/casper/initrd
 
 # Create a grub image
-echo ">>> Configuring grub"
-cat <<'EOF' >${BUILD_DIR}/scratch/grub.cfg
+echo ">> Configuring grub"
+(
+    touch ${BUILD_DIR}/iso/ubuntu
+    cat <<'EOF' >${BUILD_DIR}/scratch/grub.cfg
 
-search --set=root --file /DEBIAN_CUSTOM
+search --set=root --file /ubuntu
 
 insmod all_video
 
@@ -62,39 +77,40 @@ set default="0"
 set timeout=5
 
 menuentry "Docker Live" {
-    linux /vmlinuz boot=live quiet nomodeset
-    initrd /initrd
+    linux /casper/vmlinuz boot=casper noprompt nopersistent toram nomodeset ---
+    initrd /casper/initrd
 }
 EOF
-touch ${BUILD_DIR}/iso/DEBIAN_CUSTOM
 
-grub-mkstandalone \
-    --format=i386-pc \
-    --output=${BUILD_DIR}/scratch/core.img \
-    --install-modules="linux normal iso9660 biosdisk memdisk search tar ls" \
-    --modules="linux normal iso9660 biosdisk search" \
-    --locales="" \
-    --fonts="" \
-    "boot/grub/grub.cfg=${BUILD_DIR}/scratch/grub.cfg"
-cat /usr/lib/grub/i386-pc/cdboot.img ${BUILD_DIR}/scratch/core.img > ${BUILD_DIR}/scratch/bios.img
+    grub-mkstandalone \
+        --format=i386-pc \
+        --output=${BUILD_DIR}/scratch/core.img \
+        --install-modules="linux normal iso9660 biosdisk memdisk search tar ls" \
+        --modules="linux normal iso9660 biosdisk search" \
+        --locales="" \
+        --fonts="" \
+        "boot/grub/grub.cfg=${BUILD_DIR}/scratch/grub.cfg"
+    cat /usr/lib/grub/i386-pc/cdboot.img ${BUILD_DIR}/scratch/core.img > ${BUILD_DIR}/scratch/bios.img
+) 2>&1 | indent
 
 # Create the ISO
-echo ">>> Creating ISO"
-set -x
-xorriso \
-    -as mkisofs \
-    -iso-level 3 \
-    -full-iso9660-filenames \
-    -volid "DEBIAN_CUSTOM" \
-    --grub2-boot-info \
-    --grub2-mbr /usr/lib/grub/i386-pc/boot_hybrid.img \
-    -eltorito-boot \
-        boot/grub/bios.img \
-        -no-emul-boot \
-        -boot-load-size 4 \
-        -boot-info-table \
-        --eltorito-catalog boot/grub/boot.cat \
-    -output "${OUTPUT_DIR}/${ISO_NAME}" \
-    -graft-points \
-        "${BUILD_DIR}/iso" \
-        /boot/grub/bios.img=${BUILD_DIR}/scratch/bios.img
+echo ">> Creating ISO"
+(
+    xorriso \
+        -as mkisofs \
+        -iso-level 3 \
+        -full-iso9660-filenames \
+        -volid "DOCKER_LIVE" \
+        --grub2-boot-info \
+        --grub2-mbr /usr/lib/grub/i386-pc/boot_hybrid.img \
+        -eltorito-boot \
+            boot/grub/bios.img \
+            -no-emul-boot \
+            -boot-load-size 4 \
+            -boot-info-table \
+            --eltorito-catalog boot/grub/boot.cat \
+        -output "${OUTPUT_DIR}/${ISO_NAME}" \
+        -graft-points \
+            "${BUILD_DIR}/iso" \
+            /boot/grub/bios.img=${BUILD_DIR}/scratch/bios.img
+) 2>&1 | indent

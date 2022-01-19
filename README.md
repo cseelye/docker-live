@@ -1,8 +1,8 @@
 # docker-live
-docker-live is a bootable ISO for running docker. The entire system is contained in the ISO image and can run out of RAM without even needing a disk in the host. The image is currently ~230MB and takes ~5 min to build.
+docker-live is a bootable ISO for running docker. The entire system is contained in the ISO image and can run out of RAM without even needing a disk in the host.
 
 ## Building
-The build runs in a container, so the prerequisites are minimal. You need to have a GNU-compatible make and docker installed. Docker 19.03.4 or later is preferred. If you are on macOS, you also need the GNU version of touch; `brew install coreutils` will install it from homebrew. macOS users may also wish to install the latest version of make from homebrew.
+The build runs in a container, so the prerequisites are minimal. You need to have a GNU-compatible make and docker installed. Docker 19.03.4 or later is preferred. macOS users may wish to install the latest version of make from homebrew.
 
 `make iso` will build the build container image (if needed), mount the repo into a conatiner instance and run the build-iso script inside the container.
 
